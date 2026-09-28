@@ -1,0 +1,14 @@
+[build-system]
+requires=["setuptools>=68"]
+build-backend="setuptools.build_meta"
+
+[project]
+name="traffic-incident-routing-lab"
+version="0.1.0"
+description="Incident-aware road-routing simulator supporting closures, delay penalties and dynamic rerouting."
+requires-python=">=3.10"
+license={text="MIT"}
+authors=[{name="Syed Hafiz Ali"}]
+
+[tool.setuptools]
+py-modules=["traffic_incident_routing_lab"]
