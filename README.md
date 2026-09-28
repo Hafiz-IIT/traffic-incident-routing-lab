@@ -43,3 +43,7 @@ Tests confirm that incidents can change route choice and closures are respected.
 
 ## License
 MIT.
+
+## Extended implementation
+
+- `incident_timeline.py` adds time-bounded delays/closures and route selection at a requested hour.
