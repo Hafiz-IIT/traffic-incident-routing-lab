@@ -1,49 +1,46 @@
 # Traffic Incident Routing Lab
 
-> Incident-aware road-routing simulator supporting closures, delay penalties and dynamic rerouting.
+<p align="center"><strong>Routing Through Changing Road Conditions</strong><br/><sub>Closures and delay incidents become explicit state, not hidden assumptions.</sub></p>
 
-## Status
-**Reproducible prototype** with executable code, tests, CI, architecture, evaluation and roadmap documentation.
+<p align="center"><img src="https://img.shields.io/badge/status-reproducible%20simulation-blue" alt="Simulation"/> <img src="https://img.shields.io/badge/focus-dynamic%20routing-orange" alt="Dynamic routing"/></p>
 
-## Problem
-Static shortest-path routing can fail during incidents. Closures and delay penalties need to change effective route cost without hiding why the route changed.
+## Question
 
-## Architecture
-Directed road graph → incident state (delay/closure) → effective travel times → shortest-path rerouting → route and travel-time explanation.
+**When an incident changes the network, how should a route change—and can we explain why?**
 
-## Run
-```bash
-python -m unittest discover -s tests -v
-python traffic_incident_routing_lab.py
+```
+Road graph
+   +
+Incident timeline
+   ↓
+Effective travel time / closure
+   ↓
+Shortest-path rerouting
+   ↓
+Path + travel-time explanation
 ```
 
+## Try it
+
+```bash
+python traffic_incident_routing_lab.py
+python -m unittest discover -s tests -v
+```
+
+`incident_timeline.py` supports time-bounded delays and closures and routes the network at a requested hour.
+
 ## Implemented
-- Directed road graph
-- Base travel time
-- Incident delay penalty
-- Closure flag
+
+- directed road graph
+- base travel times
+- incident delay penalties
+- time-bounded closures
 - Dijkstra rerouting
-- Travel-time output
-- Unreachable handling
-- Tests and CI
+- explicit unreachable handling
+- deterministic CI
 
-## Research lineage
-- *Smart Urban Infrastructures: AI-Enabled City Optimization*
-- *AI for Climate Change: Modeling Micro-Level Energy Efficiency*
-- *Reinforcement-Driven Optimization in Industrial AI*
+## Research boundary
 
-## Evaluation
-Tests confirm that incidents can change route choice and closures are respected.
+A simulation laboratory, not a live traffic service or city-scale routing engine.
 
-## Limitations
-- No live map feed
-- No traffic prediction model
-- Single-query routing
-- No multi-vehicle congestion feedback yet
-
-## License
-MIT.
-
-## Extended implementation
-
-- `incident_timeline.py` adds time-bounded delays/closures and route selection at a requested hour.
+Related: [Logistics Optimization Lab](https://github.com/Hafiz-IIT/logistics-optimization-lab)
