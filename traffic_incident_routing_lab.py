@@ -57,8 +57,14 @@ class RoadNetwork:
 
 
 if __name__ == "__main__":
-    n = RoadNetwork()
-    n.add_road("A", "B", 5, delay=10)
-    n.add_road("A", "C", 7)
-    n.add_road("C", "B", 2)
-    print(n.route("A", "B"))
+    # Demonstrate the time-dependent earliest-arrival model, not only the
+    # legacy departure-snapshot baseline above.
+    from incident_timeline import Incident, TimedRoad, TimedRoadNetwork
+
+    network = TimedRoadNetwork([
+        TimedRoad("A", "B", 60),
+        TimedRoad("B", "D", 10, (Incident(1, 2, delay_minutes=30),)),
+        TimedRoad("A", "C", 75),
+        TimedRoad("C", "D", 10),
+    ])
+    print(network.route_at("A", "D", hour=0))
