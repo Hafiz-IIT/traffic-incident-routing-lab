@@ -5,6 +5,12 @@ import heapq
 from math import inf, isfinite
 
 
+def _finite(name: str, value: float) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+        raise ValueError(f"{name} must be a finite number")
+    return float(value)
+
+
 @dataclass(frozen=True)
 class Incident:
     start_hour: float
@@ -13,14 +19,16 @@ class Incident:
     closed: bool = False
 
     def __post_init__(self):
-        if not all(isfinite(value) for value in (self.start_hour, self.end_hour, self.delay_minutes)):
-            raise ValueError("incident times and delay must be finite")
-        if self.end_hour <= self.start_hour or self.delay_minutes < 0:
+        start = _finite("start_hour", self.start_hour)
+        end = _finite("end_hour", self.end_hour)
+        delay = _finite("delay_minutes", self.delay_minutes)
+        if end <= start or delay < 0:
             raise ValueError("incident end must follow start and delay must be non-negative")
         if not isinstance(self.closed, bool):
             raise ValueError("closed must be a boolean")
 
     def active(self, hour: float) -> bool:
+        hour = _finite("hour", hour)
         return self.start_hour <= hour < self.end_hour
 
 
@@ -34,25 +42,29 @@ class TimedRoad:
     def __post_init__(self):
         if any(not isinstance(value, str) or not value.strip() for value in (self.start, self.end)):
             raise ValueError("road endpoints must be non-empty strings")
-        if not isfinite(self.base_minutes) or self.base_minutes < 0:
-            raise ValueError("base travel time must be finite and non-negative")
+        if _finite("base_minutes", self.base_minutes) < 0:
+            raise ValueError("base travel time must be non-negative")
+        if not isinstance(self.incidents, tuple) or any(not isinstance(item, Incident) for item in self.incidents):
+            raise ValueError("incidents must be a tuple of Incident values")
 
     def state_at(self, hour: float) -> tuple[bool, float]:
-        if not isfinite(hour):
-            raise ValueError("hour must be finite")
+        hour = _finite("hour", hour)
         closed = False
         delay = 0.0
         for incident in self.incidents:
             if incident.active(hour):
                 closed = closed or incident.closed
                 delay += incident.delay_minutes
-        return closed, self.base_minutes + delay
+        total = self.base_minutes + delay
+        if not isfinite(total):
+            raise OverflowError("incident-adjusted travel time is not finite")
+        return closed, total
 
 
 class TimedRoadNetwork:
     def __init__(self, roads: list[TimedRoad]):
-        if any(not isinstance(road, TimedRoad) for road in roads):
-            raise ValueError("roads must contain TimedRoad instances")
+        if not isinstance(roads, list) or any(not isinstance(road, TimedRoad) for road in roads):
+            raise ValueError("roads must be a list of TimedRoad instances")
         self.roads = list(roads)
         self.adj: dict[str, list[TimedRoad]] = {}
         for road in self.roads:
@@ -62,6 +74,7 @@ class TimedRoadNetwork:
     def _earliest_edge_arrival(road: TimedRoad, available_hour: float) -> tuple[float, float, float] | None:
         # With waiting allowed, the earliest arrival on an edge is attained at
         # the current time or at an incident boundary where its state changes.
+        available_hour = _finite("available_hour", available_hour)
         candidates = {available_hour}
         for incident in road.incidents:
             if incident.start_hour >= available_hour:
@@ -88,8 +101,7 @@ class TimedRoadNetwork:
         """
         if any(not isinstance(value, str) or not value.strip() for value in (start, goal)):
             raise ValueError("route endpoints must be non-empty strings")
-        if not isfinite(hour):
-            raise ValueError("departure hour must be finite")
+        hour = _finite("departure hour", hour)
         if start == goal:
             return {"path": [start], "travel_minutes": 0.0, "driving_minutes": 0.0,
                     "waiting_minutes": 0.0, "departure_hour": hour, "arrival_hour": hour}
