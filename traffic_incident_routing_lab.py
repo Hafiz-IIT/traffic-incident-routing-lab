@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import heapq
-from math import inf
+from math import inf, isfinite
 
 
 @dataclass(frozen=True)
@@ -22,9 +22,19 @@ class RoadNetwork:
         self.adj: dict[str, list[Road]] = {}
 
     def add_road(self, start: str, end: str, base_minutes: float, *, delay: float = 0.0, closed: bool = False) -> None:
-        self.adj.setdefault(start, []).append(Road(end, base_minutes, delay, closed))
+        if not isinstance(start, str) or not start.strip() or not isinstance(end, str) or not end.strip():
+            raise ValueError("road endpoints must be non-empty strings")
+        if not isfinite(float(base_minutes)) or base_minutes <= 0:
+            raise ValueError("base_minutes must be finite and positive")
+        if not isfinite(float(delay)) or delay < 0:
+            raise ValueError("delay must be finite and non-negative")
+        if not isinstance(closed, bool):
+            raise ValueError("closed must be boolean")
+        self.adj.setdefault(start, []).append(Road(end, float(base_minutes), float(delay), closed))
 
     def route(self, start: str, goal: str) -> dict:
+        if not isinstance(start, str) or not start.strip() or not isinstance(goal, str) or not goal.strip():
+            raise ValueError("start and goal must be non-empty strings")
         dist = {start: 0.0}
         prev: dict[str, str] = {}
         queue = [(0.0, start)]
