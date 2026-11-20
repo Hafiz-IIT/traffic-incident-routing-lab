@@ -41,6 +41,13 @@ class IncidentTimelineTests(unittest.TestCase):
         self.assertEqual(result["driving_minutes"], 10)
         self.assertEqual(result["travel_minutes"], 70)
 
+    def test_nan_and_boolean_time_values_are_rejected(self):
+        for value in (float("nan"), True):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                Incident(value, value + 1)
+        with self.assertRaises(ValueError):
+            TimedRoad("A", "B", float("inf"))
+
     def test_invalid_incident_and_road_values_are_rejected(self):
         with self.assertRaises(ValueError):
             Incident(2, 1)
