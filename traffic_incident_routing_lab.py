@@ -2,7 +2,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import heapq
+import math
 from math import inf
+
+
+def _finite_nonnegative(name: str, value: float) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be a finite non-negative number")
+    try:
+        normalized = float(value)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a finite non-negative number") from exc
+    if not math.isfinite(normalized) or normalized < 0:
+        raise ValueError(f"{name} must be a finite non-negative number")
+    return normalized
 
 
 @dataclass(frozen=True)
@@ -12,9 +25,20 @@ class Road:
     incident_delay_minutes: float = 0.0
     closed: bool = False
 
+    def __post_init__(self):
+        if not isinstance(self.to, str) or not self.to.strip():
+            raise ValueError("destination must be a non-empty string")
+        _finite_nonnegative("base_minutes", self.base_minutes)
+        _finite_nonnegative("incident_delay_minutes", self.incident_delay_minutes)
+        if not isinstance(self.closed, bool):
+            raise ValueError("closed must be boolean")
+
     @property
     def travel_minutes(self) -> float:
-        return self.base_minutes + self.incident_delay_minutes
+        total = self.base_minutes + self.incident_delay_minutes
+        if not math.isfinite(total):
+            raise OverflowError("road travel time is not finite")
+        return total
 
 
 class RoadNetwork:
@@ -22,9 +46,15 @@ class RoadNetwork:
         self.adj: dict[str, list[Road]] = {}
 
     def add_road(self, start: str, end: str, base_minutes: float, *, delay: float = 0.0, closed: bool = False) -> None:
+        if not isinstance(start, str) or not start.strip():
+            raise ValueError("start must be a non-empty string")
         self.adj.setdefault(start, []).append(Road(end, base_minutes, delay, closed))
 
     def route(self, start: str, goal: str) -> dict:
+        if not isinstance(start, str) or not start.strip() or not isinstance(goal, str) or not goal.strip():
+            raise ValueError("start and goal must be non-empty strings")
+        if start == goal:
+            return {"path": [start], "travel_minutes": 0.0}
         dist = {start: 0.0}
         prev: dict[str, str] = {}
         queue = [(0.0, start)]
@@ -39,6 +69,8 @@ class RoadNetwork:
                 if road.closed:
                     continue
                 candidate = current + road.travel_minutes
+                if not math.isfinite(candidate):
+                    raise OverflowError("route travel time is not finite")
                 if candidate < dist.get(road.to, inf):
                     dist[road.to] = candidate
                     prev[road.to] = node
@@ -57,8 +89,14 @@ class RoadNetwork:
 
 
 if __name__ == "__main__":
-    n = RoadNetwork()
-    n.add_road("A", "B", 5, delay=10)
-    n.add_road("A", "C", 7)
-    n.add_road("C", "B", 2)
-    print(n.route("A", "B"))
+    # Demonstrate the time-dependent earliest-arrival model, not only the
+    # legacy departure-snapshot baseline above.
+    from incident_timeline import Incident, TimedRoad, TimedRoadNetwork
+
+    network = TimedRoadNetwork([
+        TimedRoad("A", "B", 60),
+        TimedRoad("B", "D", 10, (Incident(1, 2, delay_minutes=30),)),
+        TimedRoad("A", "C", 75),
+        TimedRoad("C", "D", 10),
+    ])
+    print(network.route_at("A", "D", hour=0))

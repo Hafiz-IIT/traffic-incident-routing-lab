@@ -18,6 +18,22 @@ class TrafficRoutingTests(unittest.TestCase):
         n.add_road("C", "B", 2)
         self.assertEqual(n.route("A", "B")["travel_minutes"], 4)
 
+    def test_negative_and_nonfinite_road_weights_rejected(self):
+        for value in (-1, float("nan"), float("inf"), True):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                RoadNetwork().add_road("A", "B", value)
+
+    def test_static_route_overflow_is_reported(self):
+        network = RoadNetwork()
+        network.add_road("A", "B", 1e308)
+        network.add_road("B", "C", 1e308)
+        with self.assertRaises(OverflowError):
+            network.route("A", "C")
+
+    def test_huge_integer_static_weight_is_rejected(self):
+        with self.assertRaises(ValueError):
+            RoadNetwork().add_road("A", "B", 10 ** 10000)
+
     def test_unreachable_raises(self):
         n = RoadNetwork()
         with self.assertRaises(ValueError):
