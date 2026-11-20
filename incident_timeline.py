@@ -6,9 +6,15 @@ from math import inf, isfinite
 
 
 def _finite(name: str, value: float) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be a finite number")
-    return float(value)
+    try:
+        normalized = float(value)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a finite number") from exc
+    if not isfinite(normalized):
+        raise ValueError(f"{name} must be a finite number")
+    return normalized
 
 
 @dataclass(frozen=True)
@@ -88,6 +94,8 @@ class TimedRoadNetwork:
             if closed:
                 continue
             arrival_hour = entry_hour + driving_minutes / 60.0
+            if not isfinite(arrival_hour):
+                raise OverflowError("edge arrival time is not finite")
             if best is None or arrival_hour < best[1]:
                 best = (entry_hour, arrival_hour, driving_minutes)
         return best
@@ -141,11 +149,13 @@ class TimedRoadNetwork:
             node = parent
         path.reverse()
         total = (arrival[goal] - hour) * 60.0
+        if not all(isfinite(value) for value in (total, driving, waiting)):
+            raise OverflowError("route duration totals are not finite")
         return {
             "path": path,
-            "travel_minutes": round(total, 6),
-            "driving_minutes": round(driving, 6),
-            "waiting_minutes": round(waiting, 6),
+            "travel_minutes": total,
+            "driving_minutes": driving,
+            "waiting_minutes": waiting,
             "departure_hour": hour,
             "arrival_hour": arrival[goal],
         }
