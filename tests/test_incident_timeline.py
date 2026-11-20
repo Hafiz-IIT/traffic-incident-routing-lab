@@ -48,6 +48,22 @@ class IncidentTimelineTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             TimedRoad("A", "B", float("inf"))
 
+    def test_tiny_route_duration_is_not_rounded_to_zero(self):
+        network = TimedRoadNetwork([TimedRoad("A", "B", 1e-8)])
+        self.assertGreater(network.route_at("A", "B", hour=0.0)["travel_minutes"], 0.0)
+
+    def test_time_dependent_arrival_overflow_is_reported(self):
+        network = TimedRoadNetwork([TimedRoad("A", "B", 1e308)])
+        with self.assertRaises(OverflowError):
+            network.route_at("A", "B", hour=1.79e308)
+
+    def test_huge_integer_incident_and_road_values_are_rejected(self):
+        huge = 10 ** 10000
+        with self.assertRaises(ValueError):
+            Incident(huge, huge + 1)
+        with self.assertRaises(ValueError):
+            TimedRoad("A", "B", huge)
+
     def test_invalid_incident_and_road_values_are_rejected(self):
         with self.assertRaises(ValueError):
             Incident(2, 1)
