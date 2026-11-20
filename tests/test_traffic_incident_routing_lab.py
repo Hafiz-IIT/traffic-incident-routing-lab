@@ -23,6 +23,17 @@ class TrafficRoutingTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 RoadNetwork().add_road("A", "B", value)
 
+    def test_static_route_overflow_is_reported(self):
+        network = RoadNetwork()
+        network.add_road("A", "B", 1e308)
+        network.add_road("B", "C", 1e308)
+        with self.assertRaises(OverflowError):
+            network.route("A", "C")
+
+    def test_huge_integer_static_weight_is_rejected(self):
+        with self.assertRaises(ValueError):
+            RoadNetwork().add_road("A", "B", 10 ** 10000)
+
     def test_unreachable_raises(self):
         n = RoadNetwork()
         with self.assertRaises(ValueError):
