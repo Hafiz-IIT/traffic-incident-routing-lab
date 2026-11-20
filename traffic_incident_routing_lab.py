@@ -7,9 +7,15 @@ from math import inf
 
 
 def _finite_nonnegative(name: str, value: float) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be a finite non-negative number")
-    return float(value)
+    try:
+        normalized = float(value)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a finite non-negative number") from exc
+    if not math.isfinite(normalized) or normalized < 0:
+        raise ValueError(f"{name} must be a finite non-negative number")
+    return normalized
 
 
 @dataclass(frozen=True)
@@ -63,6 +69,8 @@ class RoadNetwork:
                 if road.closed:
                     continue
                 candidate = current + road.travel_minutes
+                if not math.isfinite(candidate):
+                    raise OverflowError("route travel time is not finite")
                 if candidate < dist.get(road.to, inf):
                     dist[road.to] = candidate
                     prev[road.to] = node
