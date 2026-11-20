@@ -1,7 +1,5 @@
 import unittest
-
 from traffic_incident_routing_lab import RoadNetwork
-
 
 class TrafficRoutingTests(unittest.TestCase):
     def test_incident_can_change_route(self):
@@ -10,19 +8,18 @@ class TrafficRoutingTests(unittest.TestCase):
         n.add_road("A", "C", 7)
         n.add_road("C", "B", 2)
         self.assertEqual(n.route("A", "B")["path"], ["A", "C", "B"])
-
     def test_closed_road_ignored(self):
         n = RoadNetwork()
         n.add_road("A", "B", 1, closed=True)
         n.add_road("A", "C", 2)
         n.add_road("C", "B", 2)
         self.assertEqual(n.route("A", "B")["travel_minutes"], 4)
-
     def test_unreachable_raises(self):
-        n = RoadNetwork()
-        with self.assertRaises(ValueError):
-            n.route("A", "B")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        with self.assertRaises(ValueError): RoadNetwork().route("A", "B")
+    def test_negative_and_nonfinite_weights_rejected(self):
+        for value in (-1, float("nan"), float("inf")):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                RoadNetwork().add_road("A", "B", value)
+    def test_start_equals_goal_is_zero_cost(self):
+        self.assertEqual(RoadNetwork().route("A", "A"), {"path": ["A"], "travel_minutes": 0.0})
+if __name__ == "__main__": unittest.main()
