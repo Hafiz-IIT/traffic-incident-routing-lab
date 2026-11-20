@@ -148,7 +148,9 @@ class TimedRoadNetwork:
             path.append(parent)
             node = parent
         path.reverse()
-        total = (arrival[goal] - hour) * 60.0
+        # Sum edge-level driving and waiting durations directly. Subtracting
+        # large absolute clock values can lose precision through cancellation.
+        total = driving + waiting
         if not all(isfinite(value) for value in (total, driving, waiting)):
             raise OverflowError("route duration totals are not finite")
         return {
