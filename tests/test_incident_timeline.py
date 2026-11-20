@@ -1,26 +1,21 @@
 import unittest
-
 from incident_timeline import Incident, TimedRoad, TimedRoadNetwork
-
-
 class IncidentTimelineTests(unittest.TestCase):
     def test_active_incident_changes_route(self):
         network = TimedRoadNetwork([
             TimedRoad("A", "B", 5, (Incident(8, 10, delay_minutes=10),)),
-            TimedRoad("A", "C", 7),
-            TimedRoad("C", "B", 2),
-        ])
+            TimedRoad("A", "C", 7), TimedRoad("C", "B", 2)])
         self.assertEqual(network.route_at("A", "B", hour=9)["path"], ["A", "C", "B"])
         self.assertEqual(network.route_at("A", "B", hour=11)["path"], ["A", "B"])
-
     def test_active_closure_removes_road(self):
         network = TimedRoadNetwork([
             TimedRoad("A", "B", 1, (Incident(8, 10, closed=True),)),
-            TimedRoad("A", "C", 2),
-            TimedRoad("C", "B", 2),
-        ])
+            TimedRoad("A", "C", 2), TimedRoad("C", "B", 2)])
         self.assertEqual(network.route_at("A", "B", hour=9)["travel_minutes"], 4)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_invalid_incident_interval_and_delay_rejected(self):
+        with self.assertRaises(ValueError): Incident(10, 8)
+        with self.assertRaises(ValueError): Incident(8, 10, delay_minutes=-1)
+    def test_nonfinite_route_time_rejected(self):
+        with self.assertRaises(ValueError):
+            TimedRoadNetwork([]).route_at("A", "B", hour=float("nan"))
+if __name__ == "__main__": unittest.main()
