@@ -96,6 +96,8 @@ class TimedRoadNetwork:
             arrival_hour = entry_hour + driving_minutes / 60.0
             if not isfinite(arrival_hour):
                 raise OverflowError("edge arrival time is not finite")
+            if driving_minutes > 0 and arrival_hour <= entry_hour:
+                raise OverflowError("edge travel time is below floating-point resolution at this clock value")
             if best is None or arrival_hour < best[1]:
                 best = (entry_hour, arrival_hour, driving_minutes)
         return best
