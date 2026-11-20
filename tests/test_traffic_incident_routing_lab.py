@@ -18,6 +18,13 @@ class TrafficRoutingTests(unittest.TestCase):
         n.add_road("C", "B", 2)
         self.assertEqual(n.route("A", "B")["travel_minutes"], 4)
 
+    def test_negative_or_nonfinite_road_times_are_rejected(self):
+        n = RoadNetwork()
+        with self.assertRaises(ValueError):
+            n.add_road("A", "B", -1)
+        with self.assertRaises(ValueError):
+            n.add_road("A", "B", 1, delay=float("nan"))
+
     def test_unreachable_raises(self):
         n = RoadNetwork()
         with self.assertRaises(ValueError):
