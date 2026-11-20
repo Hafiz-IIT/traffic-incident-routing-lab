@@ -52,6 +52,11 @@ class IncidentTimelineTests(unittest.TestCase):
         network = TimedRoadNetwork([TimedRoad("A", "B", 1e-8)])
         self.assertGreater(network.route_at("A", "B", hour=0.0)["travel_minutes"], 0.0)
 
+    def test_positive_edge_duration_below_absolute_clock_resolution_is_rejected(self):
+        network = TimedRoadNetwork([TimedRoad("A", "B", 1e-8)])
+        with self.assertRaises(OverflowError):
+            network.route_at("A", "B", hour=1e16)
+
     def test_time_dependent_arrival_overflow_is_reported(self):
         network = TimedRoadNetwork([TimedRoad("A", "B", 1e308)])
         with self.assertRaises(OverflowError):
